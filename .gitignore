@@ -1,0 +1,27 @@
+# macOS files
+.DS_Store
+
+# Secrets and environment variables
+.env
+.env.local
+backend/.env
+frontend/.env
+
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# JavaScript and React
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Private or generated ML data
+ml/data/raw/
+ml/data/processed/
+
+# Local editor settings
+.vscode/
