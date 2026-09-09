@@ -3,6 +3,9 @@ import { useState, type FormEvent } from "react";
 import { createWorkout } from "../api/workouts";
 import type { Workout } from "../types/workout";
 
+import { getRecommendation } from "../api/recommendations";
+import type { Recommendation } from "../types/recommendation";
+
 
 function LogWorkoutPage() {
   const [exercise, setExercise] = useState("");
@@ -17,6 +20,8 @@ function LogWorkoutPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [recommendation, setRecommendation] =
+  useState<Recommendation | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,6 +56,11 @@ function LogWorkoutPage() {
       });
 
       setLastSavedWorkout(savedWorkout);
+
+      const nextRecommendation =
+        await getRecommendation(savedWorkout.exercise);
+
+      setRecommendation(nextRecommendation);
 
       setExercise("");
       setSets("");
@@ -166,6 +176,25 @@ function LogWorkoutPage() {
           </p>
 
           <p>RPE: {lastSavedWorkout.rpe}</p>
+        </section>
+      )}
+
+      {recommendation && (
+        <section>
+          <h3>Next Session Recommendation</h3>
+
+          <h4>{recommendation.exercise}</h4>
+
+          <p>
+            Recommended Weight:{" "}
+            {recommendation.recommended_weight} lb
+          </p>
+
+          <p>
+            Target Reps: {recommendation.reps}
+          </p>
+
+          <p>{recommendation.reason}</p>
         </section>
       )}
     </main>
