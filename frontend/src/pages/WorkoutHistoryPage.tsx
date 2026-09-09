@@ -98,6 +98,16 @@ function WorkoutHistoryPage() {
             <p>RPE: {workout.rpe}</p>
 
             <p>
+              Training Volume:{" "}
+              {workout.training_volume.toLocaleString()} lb
+            </p>
+
+            <p>
+              Estimated 1RM:{" "}
+              {workout.estimated_1rm.toFixed(1)} lb
+            </p>
+
+            <p>
               Logged:{" "}
               {new Date(workout.created_at).toLocaleString()}
             </p>

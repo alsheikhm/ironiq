@@ -5,6 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
+from app.services.calculations import (
+    calculate_estimated_1rm,
+    calculate_training_volume,
+)
 
 class Workout(Base):
     __tablename__ = "workouts"
@@ -41,3 +45,18 @@ class Workout(Base):
         server_default=func.now(),
         nullable=False,
     )
+
+    @property
+    def training_volume(self) -> float:
+        return calculate_training_volume(
+            self.sets,
+            self.weight,
+            self.reps,
+        )
+
+    @property
+    def estimated_1rm(self) -> float:
+        return calculate_estimated_1rm(
+            self.weight,
+            self.reps,
+        )

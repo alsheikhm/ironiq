@@ -16,6 +16,8 @@ class WorkoutCreate(BaseModel):
 class WorkoutResponse(WorkoutCreate):
     id: int
     created_at: datetime
+    training_volume: float
+    estimated_1rm: float
 
     model_config = ConfigDict(
         from_attributes=True,

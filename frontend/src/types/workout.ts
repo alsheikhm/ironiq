@@ -9,4 +9,6 @@ export interface WorkoutCreate {
 export interface Workout extends WorkoutCreate {
   id: number;
   created_at: string;
+  training_volume: number;
+  estimated_1rm: number;
 }
