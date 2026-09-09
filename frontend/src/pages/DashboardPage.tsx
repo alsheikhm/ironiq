@@ -1,12 +1,26 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import { getAnalyticsSummary } from "../api/analytics";
+import { getWorkouts } from "../api/workouts";
+
+import ProgressChart from "../components/ProgressChart";
+
 import type { AnalyticsSummary } from "../types/analytics";
+import type { Workout } from "../types/workout";
 
 
 function DashboardPage() {
   const [summary, setSummary] =
     useState<AnalyticsSummary | null>(null);
+
+  const [workouts, setWorkouts] =
+    useState<Workout[]>([]);
+
+  const [selectedExercise, setSelectedExercise] =
+    useState("");
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -18,19 +32,34 @@ function DashboardPage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function fetchSummary() {
+
+    async function fetchDashboardData() {
       try {
-        const analytics =
-          await getAnalyticsSummary();
+        const [
+          analytics,
+          savedWorkouts,
+        ] = await Promise.all([
+          getAnalyticsSummary(),
+          getWorkouts(),
+        ]);
+
 
         if (!cancelled) {
           setSummary(analytics);
+          setWorkouts(savedWorkouts);
+
+          if (savedWorkouts.length > 0) {
+            setSelectedExercise(
+              savedWorkouts[0].exercise
+            );
+          }
+
           setError("");
         }
       } catch {
         if (!cancelled) {
           setError(
-            "Unable to load dashboard analytics."
+            "Unable to load dashboard data."
           );
         }
       } finally {
@@ -40,12 +69,23 @@ function DashboardPage() {
       }
     }
 
-    void fetchSummary();
+
+    void fetchDashboardData();
+
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+
+  const exerciseNames = Array.from(
+    new Set(
+      workouts.map(
+        (workout) => workout.exercise
+      )
+    )
+  ).sort();
 
 
   if (isLoading) {
@@ -62,8 +102,9 @@ function DashboardPage() {
     return (
       <main>
         <h2>Dashboard</h2>
+
         <p>
-          {error || "Analytics are unavailable."}
+          {error || "Dashboard data is unavailable."}
         </p>
       </main>
     );
@@ -79,22 +120,29 @@ function DashboardPage() {
         and training performance.
       </p>
 
+
       <section>
         <h3>Total Workout Entries</h3>
+
         <p>{summary.total_workouts}</p>
       </section>
 
+
       <section>
         <h3>Entries This Week</h3>
+
         <p>{summary.workouts_this_week}</p>
       </section>
 
+
       <section>
         <h3>Weekly Training Volume</h3>
+
         <p>
           {summary.weekly_volume.toLocaleString()} lb
         </p>
       </section>
+
 
       <section>
         <h3>Best Estimated 1RM</h3>
@@ -107,6 +155,51 @@ function DashboardPage() {
               )} lb`}
         </p>
       </section>
+
+
+      <section>
+        <h3>Strength Progress</h3>
+
+        {exerciseNames.length === 0 ? (
+          <p>
+            Log workouts to begin tracking
+            your progress.
+          </p>
+        ) : (
+          <>
+            <label htmlFor="exercise-select">
+              Exercise
+            </label>
+
+            <br />
+
+            <select
+              id="exercise-select"
+              value={selectedExercise}
+              onChange={(event) =>
+                setSelectedExercise(
+                  event.target.value
+                )
+              }
+            >
+              {exerciseNames.map((exercise) => (
+                <option
+                  key={exercise}
+                  value={exercise}
+                >
+                  {exercise}
+                </option>
+              ))}
+            </select>
+
+            <ProgressChart
+              workouts={workouts}
+              exercise={selectedExercise}
+            />
+          </>
+        )}
+      </section>
+
 
       <section>
         <h3>Current Personal Records</h3>
