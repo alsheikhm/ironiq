@@ -31,15 +31,28 @@ function LogWorkoutPage() {
     const repsNumber = Number(reps);
     const rpeNumber = Number(rpe);
 
-    if (
-      exercise.trim() === "" ||
-      setsNumber <= 0 ||
-      weightNumber <= 0 ||
-      repsNumber <= 0 ||
-      rpeNumber < 1 ||
-      rpeNumber > 10
-    ) {
-      setError("Please enter valid workout information.");
+    if (exercise.trim() === "") {
+      setError("Please enter an exercise name.");
+      return;
+    }
+
+    if (setsNumber <= 0) {
+      setError("Sets must be greater than 0.");
+      return;
+    }
+
+    if (weightNumber <= 0) {
+      setError("Weight must be greater than 0.");
+      return;
+    }
+
+    if (repsNumber <= 0) {
+      setError("Reps must be greater than 0.");
+      return;
+    }
+
+    if (rpeNumber < 1 || rpeNumber > 10) {
+      setError("RPE must be between 1 and 10.");
       return;
     }
 
@@ -153,7 +166,11 @@ function LogWorkoutPage() {
           />
         </div>
 
-        {error && <p>{error}</p>}
+        {error && (
+          <p className="error-message">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -164,7 +181,7 @@ function LogWorkoutPage() {
       </form>
 
       {lastSavedWorkout && (
-        <section>
+        <section className="success-card">
           <h3>Workout Saved</h3>
 
           <h4>{lastSavedWorkout.exercise}</h4>

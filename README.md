@@ -1,20 +1,19 @@
 # IronIQ
 
-IronIQ is a full-stack strength-training platform designed to help users
-track workouts, analyze performance trends, and receive personalized
-progression recommendations.
+IronIQ is a full-stack strength-training analytics application that helps users record workouts, track strength progression, analyze training data, and receive personalized progressive-overload recommendations.
 
-## Project Goals
+## Features
 
-IronIQ will allow users to:
-
-- Record exercises, sets, repetitions, weight, and workout dates
-- Track strength and training-volume progress over time
-- Calculate estimated one-repetition maximum values
-- Detect personal records
-- Receive progressive-overload recommendations
-- View workout data through charts and dashboards
-- Receive future performance predictions using machine learning
+- Log exercises with sets, weight, repetitions, and RPE
+- Store workout history in PostgreSQL
+- View and delete previously recorded workouts
+- Calculate training volume automatically
+- Calculate estimated one-repetition maximum (1RM)
+- Detect personal strength records by exercise
+- View weekly training metrics through a dashboard
+- Visualize estimated 1RM progression over time
+- Receive rule-based progressive-overload recommendations
+- Validate workout data on both the frontend and backend
 
 ## Technology Stack
 
@@ -23,41 +22,214 @@ IronIQ will allow users to:
 - React
 - TypeScript
 - Vite
+- React Router
+- Recharts
 
 ### Backend
 
 - Python
 - FastAPI
+- Pydantic
 - SQLAlchemy
+- Psycopg
 
 ### Database
 
 - PostgreSQL
 
-### Machine Learning
+### Testing
 
-- pandas
-- scikit-learn
-- Jupyter Notebook
+- pytest
+- ESLint
+- TypeScript/Vite production build checks
 
-### Development Tools
+### Development
 
 - Git
 - GitHub
 - Visual Studio Code
 
+## Application Architecture
+
+React sends HTTP requests to a FastAPI REST API. FastAPI validates incoming data with Pydantic and uses SQLAlchemy with Psycopg to persist workout data in PostgreSQL.
+
+Workout data is processed by backend services that calculate training volume, estimated 1RM values, personal records, dashboard analytics, and progressive-overload recommendations.
+
+## Local Development
+
+### Backend
+
+Create and activate a Python virtual environment, install dependencies, and start FastAPI:
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
+```
+
+The API runs at:
+
+```text
+http://127.0.0.1:8000
+```
+
+Interactive API documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### Frontend
+
+Install dependencies and start the Vite development server:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend normally runs at:
+
+```text
+http://localhost:5173
+```
+
+### PostgreSQL
+
+Create a local PostgreSQL database named:
+
+```text
+ironiq
+```
+
+Copy:
+
+```text
+backend/.env.example
+```
+
+to:
+
+```text
+backend/.env
+```
+
+and configure the database connection.
+
+For example:
+
+```text
+DATABASE_URL=postgresql+psycopg://your_username@localhost:5432/ironiq
+```
+
+### Frontend Environment
+
+Copy:
+
+```text
+frontend/.env.example
+```
+
+to:
+
+```text
+frontend/.env
+```
+
+and configure the FastAPI URL:
+
+```text
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+## Testing
+
+### Backend Tests
+
+From the `backend` directory with the virtual environment active:
+
+```bash
+python -m pytest
+```
+
+### Frontend Linting
+
+From the `frontend` directory:
+
+```bash
+npm run lint
+```
+
+### Frontend Production Build
+
+```bash
+npm run build
+```
+
+## Project Structure
+
+```text
+ironiq/
+├── backend/
+│   ├── app/
+│   │   ├── models/
+│   │   ├── routers/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   ├── database.py
+│   │   └── main.py
+│   ├── tests/
+│   ├── .env.example
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── types/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── index.css
+│   ├── .env.example
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── .gitignore
+└── README.md
+```
+
 ## Current Status
 
-Initial project setup is complete. The frontend and backend development
-servers are working locally.
+The core full-stack MVP is functional.
 
-## Planned Development Order
+Current functionality includes:
 
-1. Build the main frontend pages
-2. Create workout and exercise database models
-3. Connect the frontend to the backend API
-4. Add workout calculations and progress tracking
-5. Add user accounts and authentication
-6. Add rule-based recommendations
-7. Train and integrate a machine-learning prediction model
-8. Test and deploy the completed application
+- Workout logging
+- Persistent PostgreSQL storage
+- Workout history
+- Workout deletion
+- Training-volume calculations
+- Estimated 1RM calculations
+- Personal-record detection
+- Dashboard analytics
+- Progressive-overload recommendations
+- Strength-progress visualization
+- Backend unit tests
+- Frontend linting and production-build validation
+
+## Planned Future Improvements
+
+Possible future development includes:
+
+- Individual set tracking within each workout
+- User authentication and accounts
+- More detailed exercise analytics
+- Expanded recommendation logic
+- Machine-learning performance prediction
+- Automated CI testing with GitHub Actions
+- Docker containerization
+- Cloud deployment

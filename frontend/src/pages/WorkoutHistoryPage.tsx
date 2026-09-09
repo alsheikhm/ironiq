@@ -77,7 +77,11 @@ function WorkoutHistoryPage() {
 
       {isLoading && <p>Loading workouts...</p>}
 
-      {error && <p>{error}</p>}
+      {error && (
+        <p className="error-message">
+          {error}
+        </p>
+      )}
 
       {!isLoading &&
         !error &&
@@ -87,7 +91,10 @@ function WorkoutHistoryPage() {
 
       {!isLoading &&
         workouts.map((workout) => (
-          <section key={workout.id}>
+          <section
+            key={workout.id}
+            className="workout-card"
+          >
             <h3>{workout.exercise}</h3>
 
             <p>
@@ -114,6 +121,7 @@ function WorkoutHistoryPage() {
 
             <button
               type="button"
+              className="danger-button"
               onClick={() => handleDelete(workout.id)}
             >
               Delete

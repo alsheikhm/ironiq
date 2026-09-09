@@ -11,6 +11,8 @@ import ProgressChart from "../components/ProgressChart";
 import type { AnalyticsSummary } from "../types/analytics";
 import type { Workout } from "../types/workout";
 
+import MetricCard from "../components/MetricCard";
+
 
 function DashboardPage() {
   const [summary, setSummary] =
@@ -121,40 +123,31 @@ function DashboardPage() {
       </p>
 
 
-      <section>
-        <h3>Total Workout Entries</h3>
+      <div className="metrics-grid">
+        <MetricCard
+          title="Total Workout Entries"
+          value={summary.total_workouts}
+        />
 
-        <p>{summary.total_workouts}</p>
-      </section>
+        <MetricCard
+          title="Entries This Week"
+          value={summary.workouts_this_week}
+        />
 
+        <MetricCard
+          title="Weekly Training Volume"
+          value={`${summary.weekly_volume.toLocaleString()} lb`}
+        />
 
-      <section>
-        <h3>Entries This Week</h3>
-
-        <p>{summary.workouts_this_week}</p>
-      </section>
-
-
-      <section>
-        <h3>Weekly Training Volume</h3>
-
-        <p>
-          {summary.weekly_volume.toLocaleString()} lb
-        </p>
-      </section>
-
-
-      <section>
-        <h3>Best Estimated 1RM</h3>
-
-        <p>
-          {summary.best_estimated_1rm === null
-            ? "No data yet"
-            : `${summary.best_estimated_1rm.toFixed(
-                1
-              )} lb`}
-        </p>
-      </section>
+        <MetricCard
+          title="Best Estimated 1RM"
+          value={
+            summary.best_estimated_1rm === null
+              ? "No data yet"
+              : `${summary.best_estimated_1rm.toFixed(1)} lb`
+          }
+        />
+      </div>
 
 
       <section>
