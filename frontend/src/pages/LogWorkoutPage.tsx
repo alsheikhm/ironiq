@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from "react";
-import type { WorkoutEntry } from "../types/workout";
+
+import { createWorkout } from "../api/workouts";
+import type { Workout } from "../types/workout";
+
 
 function LogWorkoutPage() {
   const [exercise, setExercise] = useState("");
@@ -8,10 +11,14 @@ function LogWorkoutPage() {
   const [reps, setReps] = useState("");
   const [rpe, setRpe] = useState("");
 
-  const [workouts, setWorkouts] = useState<WorkoutEntry[]>([]);
-  const [error, setError] = useState("");
+  const [lastSavedWorkout, setLastSavedWorkout] =
+    useState<Workout | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const setsNumber = Number(sets);
@@ -31,33 +38,47 @@ function LogWorkoutPage() {
       return;
     }
 
-    const newWorkout: WorkoutEntry = {
-      id: Date.now(),
-      exercise: exercise.trim(),
-      sets: setsNumber,
-      weight: weightNumber,
-      reps: repsNumber,
-      rpe: rpeNumber,
-    };
-
-    setWorkouts((currentWorkouts) => [...currentWorkouts, newWorkout]);
-
-    setExercise("");
-    setSets("");
-    setWeight("");
-    setReps("");
-    setRpe("");
     setError("");
+    setIsSubmitting(true);
+
+    try {
+      const savedWorkout = await createWorkout({
+        exercise: exercise.trim(),
+        sets: setsNumber,
+        weight: weightNumber,
+        reps: repsNumber,
+        rpe: rpeNumber,
+      });
+
+      setLastSavedWorkout(savedWorkout);
+
+      setExercise("");
+      setSets("");
+      setWeight("");
+      setReps("");
+      setRpe("");
+    } catch {
+      setError(
+        "Unable to save workout. Make sure the backend server is running."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
+
 
   return (
     <main>
       <h2>Log Workout</h2>
-      <p>Record your working sets and track your strength progress.</p>
+
+      <p>
+        Record your working sets and track your strength progress.
+      </p>
 
       <form onSubmit={handleSubmit}>
         <div>
           <label htmlFor="exercise">Exercise</label>
+
           <input
             id="exercise"
             type="text"
@@ -69,6 +90,7 @@ function LogWorkoutPage() {
 
         <div>
           <label htmlFor="sets">Sets</label>
+
           <input
             id="sets"
             type="number"
@@ -81,6 +103,7 @@ function LogWorkoutPage() {
 
         <div>
           <label htmlFor="weight">Weight (lb)</label>
+
           <input
             id="weight"
             type="number"
@@ -94,6 +117,7 @@ function LogWorkoutPage() {
 
         <div>
           <label htmlFor="reps">Reps</label>
+
           <input
             id="reps"
             type="number"
@@ -106,6 +130,7 @@ function LogWorkoutPage() {
 
         <div>
           <label htmlFor="rpe">RPE</label>
+
           <input
             id="rpe"
             type="number"
@@ -120,30 +145,32 @@ function LogWorkoutPage() {
 
         {error && <p>{error}</p>}
 
-        <button type="submit">Add Workout</button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Saving..." : "Add Workout"}
+        </button>
       </form>
 
-      <section>
-        <h3>Current Workout</h3>
+      {lastSavedWorkout && (
+        <section>
+          <h3>Workout Saved</h3>
 
-        {workouts.length === 0 ? (
-          <p>No exercises logged yet.</p>
-        ) : (
-          workouts.map((workout) => (
-            <div key={workout.id}>
-              <h4>{workout.exercise}</h4>
+          <h4>{lastSavedWorkout.exercise}</h4>
 
-              <p>
-                {workout.sets} sets × {workout.reps} reps × {workout.weight} lb
-              </p>
+          <p>
+            {lastSavedWorkout.sets} sets ×{" "}
+            {lastSavedWorkout.reps} reps ×{" "}
+            {lastSavedWorkout.weight} lb
+          </p>
 
-              <p>RPE: {workout.rpe}</p>
-            </div>
-          ))
-        )}
-      </section>
+          <p>RPE: {lastSavedWorkout.rpe}</p>
+        </section>
+      )}
     </main>
   );
 }
+
 
 export default LogWorkoutPage;
