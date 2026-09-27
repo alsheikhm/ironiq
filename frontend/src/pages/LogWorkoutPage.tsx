@@ -1,85 +1,283 @@
-import { useState, type FormEvent } from "react";
+import {
+  useState,
+  type FormEvent,
+} from "react";
 
-import { createWorkout } from "../api/workouts";
-import type { Workout } from "../types/workout";
+import { createSession } from "../api/sessions";
 
-import { getRecommendation } from "../api/recommendations";
-import type { Recommendation } from "../types/recommendation";
+import type {
+  WorkoutSession,
+  WorkoutSessionCreate,
+} from "../types/session";
+
+
+interface SetFormData {
+  weight: string;
+  reps: string;
+  rpe: string;
+}
+
+
+interface ExerciseFormData {
+  exercise: string;
+  sets: SetFormData[];
+}
+
+
+function createEmptySet(): SetFormData {
+  return {
+    weight: "",
+    reps: "",
+    rpe: "",
+  };
+}
+
+
+function createEmptyExercise(): ExerciseFormData {
+  return {
+    exercise: "",
+    sets: [createEmptySet()],
+  };
+}
 
 
 function LogWorkoutPage() {
-  const [exercise, setExercise] = useState("");
-  const [sets, setSets] = useState("");
-  const [weight, setWeight] = useState("");
-  const [reps, setReps] = useState("");
-  const [rpe, setRpe] = useState("");
+  const [sessionName, setSessionName] =
+    useState("");
 
-  const [lastSavedWorkout, setLastSavedWorkout] =
-    useState<Workout | null>(null);
+  const [exercises, setExercises] =
+    useState<ExerciseFormData[]>([
+      createEmptyExercise(),
+    ]);
 
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedSession, setSavedSession] =
+    useState<WorkoutSession | null>(null);
 
-  const [recommendation, setRecommendation] =
-  useState<Recommendation | null>(null);
+  const [error, setError] =
+    useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
+
+  function updateExerciseName(
+    exerciseIndex: number,
+    value: string
+  ) {
+    setExercises((currentExercises) =>
+      currentExercises.map(
+        (exercise, index) =>
+          index === exerciseIndex
+            ? {
+                ...exercise,
+                exercise: value,
+              }
+            : exercise
+      )
+    );
+  }
+
+
+  function updateSetField(
+    exerciseIndex: number,
+    setIndex: number,
+    field: keyof SetFormData,
+    value: string
+  ) {
+    setExercises((currentExercises) =>
+      currentExercises.map(
+        (exercise, currentExerciseIndex) => {
+          if (
+            currentExerciseIndex !==
+            exerciseIndex
+          ) {
+            return exercise;
+          }
+
+          return {
+            ...exercise,
+            sets: exercise.sets.map(
+              (workoutSet, currentSetIndex) =>
+                currentSetIndex === setIndex
+                  ? {
+                      ...workoutSet,
+                      [field]: value,
+                    }
+                  : workoutSet
+            ),
+          };
+        }
+      )
+    );
+  }
+
+
+  function addSet(
+    exerciseIndex: number
+  ) {
+    setExercises((currentExercises) =>
+      currentExercises.map(
+        (exercise, index) =>
+          index === exerciseIndex
+            ? {
+                ...exercise,
+                sets: [
+                  ...exercise.sets,
+                  createEmptySet(),
+                ],
+              }
+            : exercise
+      )
+    );
+  }
+
+
+  function removeSet(
+    exerciseIndex: number,
+    setIndex: number
+  ) {
+    setExercises((currentExercises) =>
+      currentExercises.map(
+        (exercise, index) => {
+          if (index !== exerciseIndex) {
+            return exercise;
+          }
+
+          if (exercise.sets.length === 1) {
+            return exercise;
+          }
+
+          return {
+            ...exercise,
+            sets: exercise.sets.filter(
+              (_, currentSetIndex) =>
+                currentSetIndex !== setIndex
+            ),
+          };
+        }
+      )
+    );
+  }
+
+
+  function addExercise() {
+    setExercises((currentExercises) => [
+      ...currentExercises,
+      createEmptyExercise(),
+    ]);
+  }
+
+
+  function removeExercise(
+    exerciseIndex: number
+  ) {
+    if (exercises.length === 1) {
+      return;
+    }
+
+    setExercises((currentExercises) =>
+      currentExercises.filter(
+        (_, index) =>
+          index !== exerciseIndex
+      )
+    );
+  }
+
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
-    const setsNumber = Number(sets);
-    const weightNumber = Number(weight);
-    const repsNumber = Number(reps);
-    const rpeNumber = Number(rpe);
-
-    if (exercise.trim() === "") {
-      setError("Please enter an exercise name.");
+    if (sessionName.trim() === "") {
+      setError(
+        "Please enter a workout name."
+      );
       return;
     }
 
-    if (setsNumber <= 0) {
-      setError("Sets must be greater than 0.");
-      return;
+    for (const exercise of exercises) {
+      if (exercise.exercise.trim() === "") {
+        setError(
+          "Every exercise needs a name."
+        );
+        return;
+      }
+
+      for (const workoutSet of exercise.sets) {
+        const weight =
+          Number(workoutSet.weight);
+
+        const reps =
+          Number(workoutSet.reps);
+
+        const rpe =
+          Number(workoutSet.rpe);
+
+        if (weight <= 0) {
+          setError(
+            "Every set needs a weight greater than 0."
+          );
+          return;
+        }
+
+        if (reps <= 0) {
+          setError(
+            "Every set needs at least 1 rep."
+          );
+          return;
+        }
+
+        if (rpe < 1 || rpe > 10) {
+          setError(
+            "Every set needs an RPE between 1 and 10."
+          );
+          return;
+        }
+      }
     }
 
-    if (weightNumber <= 0) {
-      setError("Weight must be greater than 0.");
-      return;
-    }
 
-    if (repsNumber <= 0) {
-      setError("Reps must be greater than 0.");
-      return;
-    }
+    const sessionData: WorkoutSessionCreate = {
+      name: sessionName.trim(),
 
-    if (rpeNumber < 1 || rpeNumber > 10) {
-      setError("RPE must be between 1 and 10.");
-      return;
-    }
+      exercises: exercises.map(
+        (exercise) => ({
+          exercise:
+            exercise.exercise.trim(),
+
+          sets: exercise.sets.map(
+            (workoutSet) => ({
+              weight:
+                Number(workoutSet.weight),
+
+              reps:
+                Number(workoutSet.reps),
+
+              rpe:
+                Number(workoutSet.rpe),
+            })
+          ),
+        })
+      ),
+    };
+
 
     setError("");
     setIsSubmitting(true);
 
+
     try {
-      const savedWorkout = await createWorkout({
-        exercise: exercise.trim(),
-        sets: setsNumber,
-        weight: weightNumber,
-        reps: repsNumber,
-        rpe: rpeNumber,
-      });
+      const newSession =
+        await createSession(sessionData);
 
-      setLastSavedWorkout(savedWorkout);
+      setSavedSession(newSession);
 
-      const nextRecommendation =
-        await getRecommendation(savedWorkout.exercise);
+      setSessionName("");
 
-      setRecommendation(nextRecommendation);
-
-      setExercise("");
-      setSets("");
-      setWeight("");
-      setReps("");
-      setRpe("");
+      setExercises([
+        createEmptyExercise(),
+      ]);
     } catch {
       setError(
         "Unable to save workout. Make sure the backend server is running."
@@ -95,76 +293,245 @@ function LogWorkoutPage() {
       <h2>Log Workout</h2>
 
       <p>
-        Record your working sets and track your strength progress.
+        Record a complete workout with
+        exercises and individual sets.
       </p>
 
-      <form onSubmit={handleSubmit}>
+
+      <form
+        className="session-form"
+        onSubmit={handleSubmit}
+      >
         <div>
-          <label htmlFor="exercise">Exercise</label>
+          <label htmlFor="session-name">
+            Workout Name
+          </label>
 
           <input
-            id="exercise"
+            id="session-name"
             type="text"
-            placeholder="Bench Press"
-            value={exercise}
-            onChange={(event) => setExercise(event.target.value)}
+            placeholder="Push Day"
+            value={sessionName}
+            onChange={(event) =>
+              setSessionName(
+                event.target.value
+              )
+            }
           />
         </div>
 
-        <div>
-          <label htmlFor="sets">Sets</label>
 
-          <input
-            id="sets"
-            type="number"
-            placeholder="3"
-            min="1"
-            value={sets}
-            onChange={(event) => setSets(event.target.value)}
-          />
-        </div>
+        {exercises.map(
+          (exercise, exerciseIndex) => (
+            <section
+              className="exercise-editor"
+              key={exerciseIndex}
+            >
+              <div className="exercise-header">
+                <h3>
+                  Exercise {exerciseIndex + 1}
+                </h3>
 
-        <div>
-          <label htmlFor="weight">Weight (lb)</label>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={
+                    exercises.length === 1
+                  }
+                  onClick={() =>
+                    removeExercise(
+                      exerciseIndex
+                    )
+                  }
+                >
+                  Remove Exercise
+                </button>
+              </div>
 
-          <input
-            id="weight"
-            type="number"
-            placeholder="185"
-            min="0"
-            step="0.5"
-            value={weight}
-            onChange={(event) => setWeight(event.target.value)}
-          />
-        </div>
 
-        <div>
-          <label htmlFor="reps">Reps</label>
+              <div>
+                <label
+                  htmlFor={
+                    `exercise-${exerciseIndex}`
+                  }
+                >
+                  Exercise Name
+                </label>
 
-          <input
-            id="reps"
-            type="number"
-            placeholder="8"
-            min="1"
-            value={reps}
-            onChange={(event) => setReps(event.target.value)}
-          />
-        </div>
+                <input
+                  id={
+                    `exercise-${exerciseIndex}`
+                  }
+                  type="text"
+                  placeholder="Bench Press"
+                  value={
+                    exercise.exercise
+                  }
+                  onChange={(event) =>
+                    updateExerciseName(
+                      exerciseIndex,
+                      event.target.value
+                    )
+                  }
+                />
+              </div>
 
-        <div>
-          <label htmlFor="rpe">RPE</label>
 
-          <input
-            id="rpe"
-            type="number"
-            placeholder="8"
-            min="1"
-            max="10"
-            step="0.5"
-            value={rpe}
-            onChange={(event) => setRpe(event.target.value)}
-          />
-        </div>
+              <div className="sets-list">
+                {exercise.sets.map(
+                  (
+                    workoutSet,
+                    setIndex
+                  ) => (
+                    <div
+                      className="set-row"
+                      key={setIndex}
+                    >
+                      <span className="set-number">
+                        Set {setIndex + 1}
+                      </span>
+
+
+                      <div>
+                        <label
+                          htmlFor={
+                            `weight-${exerciseIndex}-${setIndex}`
+                          }
+                        >
+                          Weight
+                        </label>
+
+                        <input
+                          id={
+                            `weight-${exerciseIndex}-${setIndex}`
+                          }
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          placeholder="185"
+                          value={
+                            workoutSet.weight
+                          }
+                          onChange={(event) =>
+                            updateSetField(
+                              exerciseIndex,
+                              setIndex,
+                              "weight",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+
+
+                      <div>
+                        <label
+                          htmlFor={
+                            `reps-${exerciseIndex}-${setIndex}`
+                          }
+                        >
+                          Reps
+                        </label>
+
+                        <input
+                          id={
+                            `reps-${exerciseIndex}-${setIndex}`
+                          }
+                          type="number"
+                          min="1"
+                          placeholder="8"
+                          value={
+                            workoutSet.reps
+                          }
+                          onChange={(event) =>
+                            updateSetField(
+                              exerciseIndex,
+                              setIndex,
+                              "reps",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+
+
+                      <div>
+                        <label
+                          htmlFor={
+                            `rpe-${exerciseIndex}-${setIndex}`
+                          }
+                        >
+                          RPE
+                        </label>
+
+                        <input
+                          id={
+                            `rpe-${exerciseIndex}-${setIndex}`
+                          }
+                          type="number"
+                          min="1"
+                          max="10"
+                          step="0.5"
+                          placeholder="8"
+                          value={
+                            workoutSet.rpe
+                          }
+                          onChange={(event) =>
+                            updateSetField(
+                              exerciseIndex,
+                              setIndex,
+                              "rpe",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </div>
+
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={
+                          exercise.sets.length ===
+                          1
+                        }
+                        onClick={() =>
+                          removeSet(
+                            exerciseIndex,
+                            setIndex
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )
+                )}
+              </div>
+
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  addSet(exerciseIndex)
+                }
+              >
+                + Add Set
+              </button>
+            </section>
+          )
+        )}
+
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={addExercise}
+        >
+          + Add Exercise
+        </button>
+
 
         {error && (
           <p className="error-message">
@@ -172,46 +539,49 @@ function LogWorkoutPage() {
           </p>
         )}
 
+
         <button
           type="submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Add Workout"}
+          {isSubmitting
+            ? "Saving..."
+            : "Save Workout"}
         </button>
       </form>
 
-      {lastSavedWorkout && (
+
+      {savedSession && (
         <section className="success-card">
           <h3>Workout Saved</h3>
 
-          <h4>{lastSavedWorkout.exercise}</h4>
+          <h4>{savedSession.name}</h4>
 
           <p>
-            {lastSavedWorkout.sets} sets ×{" "}
-            {lastSavedWorkout.reps} reps ×{" "}
-            {lastSavedWorkout.weight} lb
+            {savedSession.exercises.length}{" "}
+            exercise
+            {savedSession.exercises.length ===
+            1
+              ? ""
+              : "s"}
           </p>
 
-          <p>RPE: {lastSavedWorkout.rpe}</p>
-        </section>
-      )}
+          {savedSession.exercises.map(
+            (exercise) => (
+              <div key={exercise.id}>
+                <strong>
+                  {exercise.exercise}
+                </strong>
 
-      {recommendation && (
-        <section>
-          <h3>Next Session Recommendation</h3>
-
-          <h4>{recommendation.exercise}</h4>
-
-          <p>
-            Recommended Weight:{" "}
-            {recommendation.recommended_weight} lb
-          </p>
-
-          <p>
-            Target Reps: {recommendation.reps}
-          </p>
-
-          <p>{recommendation.reason}</p>
+                <p>
+                  {exercise.sets.length} set
+                  {exercise.sets.length === 1
+                    ? ""
+                    : "s"}
+                </p>
+              </div>
+            )
+          )}
         </section>
       )}
     </main>

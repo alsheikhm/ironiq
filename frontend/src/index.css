@@ -203,6 +203,55 @@ button:hover:not(:disabled) {
   margin-top: 20px;
 }
 
+.session-form {
+  max-width: 900px;
+}
+
+.exercise-editor {
+  margin: 24px 0;
+  background: #f9fafb;
+}
+
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.sets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.set-row {
+  display: grid;
+  grid-template-columns:
+    80px
+    repeat(3, minmax(100px, 1fr))
+    auto;
+  gap: 12px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+}
+
+.set-row > div {
+  margin-bottom: 0;
+}
+
+.set-number {
+  align-self: center;
+  font-weight: 600;
+}
+
+.secondary-button {
+  background: #4b5563;
+  margin: 8px 0;
+}
 
 /* Mobile */
 
@@ -218,6 +267,15 @@ button:hover:not(:disabled) {
     width: 100%;
     flex-wrap: wrap;
     gap: 16px;
+  }
+
+  .set-row {
+    grid-template-columns: 1fr;
+  }
+
+  .exercise-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   main {
