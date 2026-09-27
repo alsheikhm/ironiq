@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import models
 from app.database import Base, engine
-from app.routers.workouts import router as workouts_router
 from app.routers.analytics import router as analytics_router
 from app.routers.sessions import router as sessions_router
 from app.routers.recommendations import (
@@ -29,7 +28,6 @@ app.add_middleware(
 Base.metadata.create_all(bind=engine)
 
 
-app.include_router(workouts_router)
 app.include_router(analytics_router)
 app.include_router(recommendations_router)
 app.include_router(sessions_router)

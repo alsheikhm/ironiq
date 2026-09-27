@@ -4,13 +4,13 @@ IronIQ is a full-stack strength-training analytics application that helps users 
 
 ## Features
 
-- Log exercises with sets, weight, repetitions, and RPE
-- Store workout history in PostgreSQL
-- View and delete previously recorded workouts
-- Calculate training volume automatically
+- Create complete workout sessions with multiple exercises
+- Record individual sets with weight, repetitions, and RPE
+- Store workout sessions, exercises, and sets in PostgreSQL
+- View and delete previously recorded workout sessions
+- Calculate per-set and weekly training volume
 - Calculate estimated one-repetition maximum (1RM)
 - Detect personal strength records by exercise
-- View weekly training metrics through a dashboard
 - Visualize estimated 1RM progression over time
 - Receive rule-based progressive-overload recommendations
 - Validate workout data on both the frontend and backend

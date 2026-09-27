@@ -6,17 +6,6 @@ def calculate_set_volume(
 
     return round(volume, 1)
 
-
-def calculate_training_volume(
-    sets: int,
-    weight: float,
-    reps: int,
-) -> float:
-    volume = sets * weight * reps
-
-    return round(volume, 1)
-
-
 def calculate_estimated_1rm(
     weight: float,
     reps: int,
