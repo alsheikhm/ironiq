@@ -8,44 +8,87 @@ import {
   YAxis,
 } from "recharts";
 
-import type { Workout } from "../types/workout";
+import type {
+  WorkoutSession,
+} from "../types/session";
 
 
 interface ProgressChartProps {
-  workouts: Workout[];
+  sessions: WorkoutSession[];
   exercise: string;
 }
 
 
 function ProgressChart({
-  workouts,
+  sessions,
   exercise,
 }: ProgressChartProps) {
-  const chartData = workouts
-    .filter(
-      (workout) =>
-        workout.exercise.trim().toLowerCase() ===
-        exercise.trim().toLowerCase()
-    )
-    .sort(
-      (firstWorkout, secondWorkout) =>
-        new Date(firstWorkout.created_at).getTime() -
-        new Date(secondWorkout.created_at).getTime()
-    )
-    .map((workout) => ({
-      date: new Date(
-        workout.created_at
-      ).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      }),
+  const normalizedExercise =
+    exercise.trim().toLowerCase();
 
-      estimated1RM: workout.estimated_1rm,
-    }));
+
+  const chartData = sessions
+    .flatMap((session) => {
+      const matchingExercise =
+        session.exercises.find(
+          (workoutExercise) =>
+            workoutExercise.exercise
+              .trim()
+              .toLowerCase() ===
+            normalizedExercise
+        );
+
+
+      if (
+        !matchingExercise ||
+        matchingExercise.sets.length === 0
+      ) {
+        return [];
+      }
+
+
+      const bestSet =
+        matchingExercise.sets.reduce(
+          (best, current) =>
+            current.estimated_1rm >
+            best.estimated_1rm
+              ? current
+              : best
+        );
+
+
+      return [
+        {
+          timestamp: new Date(
+            session.created_at
+          ).getTime(),
+
+          date: new Date(
+            session.created_at
+          ).toLocaleDateString(
+            undefined,
+            {
+              month: "short",
+              day: "numeric",
+            }
+          ),
+
+          estimated1RM:
+            bestSet.estimated_1rm,
+        },
+      ];
+    })
+    .sort(
+      (firstPoint, secondPoint) =>
+        firstPoint.timestamp -
+        secondPoint.timestamp
+    );
 
 
   if (chartData.length === 0) {
-    return <p>No progress data available.</p>;
+    return (
+      <p>No progress data available.</p>
+    );
   }
 
 
@@ -56,7 +99,9 @@ function ProgressChart({
         height="100%"
       >
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid
+            strokeDasharray="3 3"
+          />
 
           <XAxis dataKey="date" />
 

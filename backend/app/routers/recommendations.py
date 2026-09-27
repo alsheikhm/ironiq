@@ -1,10 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+    selectinload,
+)
 
 from app.database import get_db
-from app.models.workout import Workout
-from app.schemas.recommendation import RecommendationResponse
+from app.models.session import (
+    WorkoutExercise,
+    WorkoutSession,
+)
+from app.schemas.recommendation import (
+    RecommendationResponse,
+)
 from app.services.recommendations import (
     build_recommendation_reason,
     calculate_recommended_weight,
@@ -25,40 +38,80 @@ def get_recommendation(
     exercise: str,
     db: Session = Depends(get_db),
 ):
-    normalized_exercise = exercise.strip().lower()
+    normalized_exercise = (
+        exercise.strip().lower()
+    )
 
     statement = (
-        select(Workout)
+        select(WorkoutExercise)
+        .join(WorkoutSession)
+        .options(
+            selectinload(
+                WorkoutExercise.sets
+            )
+        )
         .where(
-            func.lower(Workout.exercise)
+            func.lower(
+                WorkoutExercise.exercise
+            )
             == normalized_exercise
         )
-        .order_by(Workout.created_at.desc())
+        .order_by(
+            WorkoutSession.created_at.desc()
+        )
         .limit(1)
     )
 
-    latest_workout = db.scalars(statement).first()
+    latest_exercise = (
+        db.scalars(statement).first()
+    )
 
-    if latest_workout is None:
+
+    if (
+        latest_exercise is None
+        or len(latest_exercise.sets) == 0
+    ):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No workout history found for this exercise",
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+            ),
+            detail=(
+                "No workout history found "
+                "for this exercise"
+            ),
         )
 
-    recommended_weight = calculate_recommended_weight(
-        current_weight=latest_workout.weight,
-        rpe=latest_workout.rpe,
+
+    top_set = max(
+        latest_exercise.sets,
+        key=lambda workout_set: (
+            workout_set.estimated_1rm,
+            workout_set.rpe,
+        ),
     )
 
-    reason = build_recommendation_reason(
-        rpe=latest_workout.rpe,
+
+    recommended_weight = (
+        calculate_recommended_weight(
+            current_weight=top_set.weight,
+            rpe=top_set.rpe,
+        )
     )
+
+    reason = (
+        build_recommendation_reason(
+            rpe=top_set.rpe,
+        )
+    )
+
 
     return RecommendationResponse(
-        exercise=latest_workout.exercise,
-        current_weight=latest_workout.weight,
-        recommended_weight=recommended_weight,
-        reps=latest_workout.reps,
-        rpe=latest_workout.rpe,
+        exercise=latest_exercise.exercise,
+        current_weight=top_set.weight,
+        recommended_weight=(
+            recommended_weight
+        ),
+        reps=top_set.reps,
+        rpe=top_set.rpe,
         reason=reason,
     )

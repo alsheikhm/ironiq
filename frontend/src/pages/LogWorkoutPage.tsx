@@ -10,6 +10,13 @@ import type {
   WorkoutSessionCreate,
 } from "../types/session";
 
+import {
+  getRecommendation,
+} from "../api/recommendations";
+
+import type {
+  Recommendation,
+} from "../types/recommendation";
 
 interface SetFormData {
   weight: string;
@@ -59,6 +66,10 @@ function LogWorkoutPage() {
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
+  const [
+    recommendations,
+    setRecommendations,
+  ] = useState<Recommendation[]>([]);
 
   function updateExerciseName(
     exerciseIndex: number,
@@ -272,6 +283,24 @@ function LogWorkoutPage() {
         await createSession(sessionData);
 
       setSavedSession(newSession);
+
+      try {
+        const nextRecommendations =
+          await Promise.all(
+            newSession.exercises.map(
+              (exercise) =>
+                getRecommendation(
+                  exercise.exercise
+                )
+            )
+          );
+
+        setRecommendations(
+          nextRecommendations
+        );
+      } catch {
+        setRecommendations([]);
+      }
 
       setSessionName("");
 
@@ -581,6 +610,49 @@ function LogWorkoutPage() {
                 </p>
               </div>
             )
+          )}
+
+          {recommendations.length > 0 && (
+            <section>
+              <h3>
+                Next Session Recommendations
+              </h3>
+
+              {recommendations.map(
+                (recommendation) => (
+                  <div
+                    key={
+                      recommendation.exercise
+                    }
+                  >
+                    <h4>
+                      {recommendation.exercise}
+                    </h4>
+
+                    <p>
+                      Current Top Set:{" "}
+                      {
+                        recommendation.current_weight
+                      }{" "}
+                      lb × {recommendation.reps}
+                    </p>
+
+                    <p>
+                      Recommended Weight:{" "}
+                      {
+                        recommendation
+                          .recommended_weight
+                      }{" "}
+                      lb
+                    </p>
+
+                    <p>
+                      {recommendation.reason}
+                    </p>
+                  </div>
+                )
+              )}
+            </section>
           )}
         </section>
       )}

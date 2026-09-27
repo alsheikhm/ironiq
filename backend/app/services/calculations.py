@@ -1,3 +1,12 @@
+def calculate_set_volume(
+    weight: float,
+    reps: int,
+) -> float:
+    volume = weight * reps
+
+    return round(volume, 1)
+
+
 def calculate_training_volume(
     sets: int,
     weight: float,

@@ -15,9 +15,12 @@ export interface WorkoutSessionCreate {
 }
 
 
-export interface WorkoutSet extends WorkoutSetCreate {
+export interface WorkoutSet
+  extends WorkoutSetCreate {
   id: number;
   set_number: number;
+  training_volume: number;
+  estimated_1rm: number;
 }
 
 export interface WorkoutExercise {
